@@ -1,3 +1,5 @@
+# © 2023. neutronflare1 all rights reserved.
+
 # import tkinter
 # import random
 
@@ -17,8 +19,8 @@
 
 # with open('./project_folder/game_resource/GameStatus.txt', 'r', encoding='UTF-8') as f:
 #     lines = f.readline()
-#     e = lines.strip().split(':')
-#     print(f'{e[0]}:{e[1]}')
+#     e, r = lines.strip().split(':')
+#     print(f'{e}!:!{r}')
 
 # for i in StatusFileLine:
 #     print(StatusFileLine["version"])
