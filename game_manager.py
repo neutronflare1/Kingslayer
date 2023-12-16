@@ -21,16 +21,17 @@ class GameManager:
 
     # tkinter 실행
     def __init__(self):
-        root = tk.Tk()
+        self.root = tk.Tk()
         
         # title -> Kingslayer<season 1>: daybreaker V 0.0.1
-        root.title(f"Kingslayer<{file.game_status_parse('season')}>: {file.game_status_parse('subtitle')}V {file.game_status_parse('version')}")
-        root.geometry(f"{1}")
-            
-        root.bind("<KeyPress>", self.key_press_handler)
-        root.bind("<KeyRelease>", self.key_release_handler)
+        self.root.title(f"Kingslayer<{file.game_status_parse('season')}>: {file.game_status_parse('subtitle')}V {file.game_status_parse('version')}")
+        self.root.geometry(f"{file.game_setting_parse('resolution')}")
+        self.root.resizable(False, False)
 
-        root.mainloop()
+        self.cvs = tk.Canvas(self.root, width = 100, height = 100, bg = "black")
+        self.cvs.pack(fill="both", expand=True)
+
+        self.root.mainloop()
 
     # 눌렀을때
     def key_press_handler(self, e):
@@ -41,6 +42,11 @@ class GameManager:
         if e.keycode in self.keys:
             self.keys.remove(e.keycode)
 
+    # init에서 bind하지 못하는 문제점 해결용 메서드 분리
+    def bind_suppoter(self):
+        self.root.bind("<KeyPress>", self.key_press_handler)
+        self.root.bind("<KeyRelease>", self.key_release_handler)
+
     # 스킬 시전시 스레드화
     def Threading_suppoter(self, skill_func):
         skill_interrupt = threading.Thread()
@@ -49,9 +55,12 @@ class GameManager:
     # 캔버스 정리 데코레이터
     def canvas_decorator(self, func, cvs):
         func()
-        cvs.delete("all")
+        self.cvs.delete("all")
 
-    def game_main_routine():
+    # 게임 메인
+    def game_main_routine(self):
+        self.bind_suppoter()
+
         # 타이틀
         while True:
             break
@@ -69,13 +78,11 @@ class GameManager:
 
 
 
-            root.update()
+            self.root.update()
 
 # 파일 매니저
-class File_manager:
-    def __init__(self):
-        pass
-
+class FileManager:
+    
     # 버그 레포트
     def BugReport(text):
         with open("BugReport_Log.txt", "w+") as file_name:
@@ -112,15 +119,38 @@ class File_manager:
                         raise Exception
                     
         except FileNotFoundError as FNFE:
-            file.BugReport(f"GameStatus파일이 원래 경로에 존재하지 않습니다.")
+            file.BugReport(f"GameStatus 파일이 원래 경로에 존재하지 않습니다.")
 
         except Exception as EX:
-            file.BugReport(f"문법상의 오류로 추정됨. 수정요망.")
+            file.BugReport(f"gamestatus file issue")
+
+    def game_setting_parse(params) -> str or int:
+        try:
+            with open('game_resource/Settings.txt', 'r', encoding='UTF-8') as gamesetting:
+                lines = gamesetting.readlines()
+
+                match params:
+                    # 세팅값 가져와서 리턴
+                    case 'resolution':
+                        resolution = lines[0].strip().split(':')
+                        return resolution[1]
+                    case _:
+                        raise Exception
+                    
+        except FileNotFoundError as FNFE:
+            file.BugReport(f"Settings 파일이 원래 경로에 존재하지 않습니다.")
+
+        except Exception as EX:
+            file.BugReport(f"gamesetting file issue")
             
-    def awakeloading():
+    def awake_suppoter():
         pass
 
- # 시작
+class SettingManager:
+    pass
+
+# 시작
+file = FileManager()
+setting = SettingManager()
 game = GameManager()
-file = File_manager()
 game.game_main_routine()
