@@ -1,3 +1,5 @@
+# © 2023. neutronflare1 all rights reserved.
+
 from abc import *                       # 추상클래스
 
 # 플레이어 추상클래스

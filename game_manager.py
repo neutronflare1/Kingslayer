@@ -1,3 +1,5 @@
+# © 2023. neutronflare1 all rights reserved.
+
 # 패키지
 import tkinter as tk
 import gc                               # 가비지 컬렉터
