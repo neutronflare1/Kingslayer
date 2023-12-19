@@ -22,17 +22,17 @@ class GameManager:
     keys = set()
 
     # tkinter 실행
-    def __init__(self):
+    def __init__(self, root):
         # 해상도에 따른 화면 좌표값(모든 UI의 비율을 잡는데 사용)
         self.resolution_center = file.game_setting_parse("resolution")
         self.resolution_xscale = file.game_setting_parse("resolution_x")
         self.resolution_yscale = file.game_setting_parse("resolution_y")
 
-        self.root = tk.Tk()
+        self.root = root
 
-        # title -> Kingslayer<season 1>: daybreaker V 0.0.1
+        # title -> Kingslayer <season 1> : daybreaker V 0.0.1
         self.root.title(
-            f"Kingslayer<{file.game_status_parse('season')}>: {file.game_status_parse('subtitle')}V {file.game_status_parse('version')}"
+            f"Kingslayer <{file.game_status_parse('season')}> : {file.game_status_parse('subtitle')} V {file.game_status_parse('version')}"
         )
         self.root.geometry(self.resolution_center)
         self.root.resizable(False, False)
@@ -61,40 +61,26 @@ class GameManager:
         self.root.bind("<KeyPress>", self.key_press_handler)
         self.root.bind("<KeyRelease>", self.key_release_handler)
 
-    # 일반적인 겜 종료
-    def normal_exit_suppoter(self, response):
-        if response == 1:
-            self.root.destroy()
-            self.root.quit()
-            exit()
-        elif response == 0:
-            return
-
-    # 이슈로 인한 겜 종료
-    def issue_exit_suppoter(self):
-        self.root.destroy()
-        self.root.quit()
-        exit()
-
     # 화면 옮겨다니기
-    def control_suppoter(self, status):
-        match status:
+    def control_suppoter(self, frame_status):
+        match frame_status:
             case 0:
-                graphic.title(status)
+                graphic.title(frame_status)
 
             case 1:
-                graphic.loading(status)
+                graphic.loading(frame_status)
 
             case 2:
-                graphic.ingame(status)
+                graphic.ingame(frame_status)
 
             case _:
                 raise Exception("status parameter 값에 문제가 있습니다.")
 
     # 게임 메인
     def game_main_routine(self):
-        status = 0
-        frame_swap_boolean = False
+        global frame_status, frame_swap_boolean
+        frame_status = 0
+        frame_swap_boolean = True
 
         # 시작 전 추가 작업
         self.bind_suppoter()
@@ -103,7 +89,8 @@ class GameManager:
         # 인게임 무한루프
         while True:
             if frame_swap_boolean == True:
-                self.control_suppoter(status)
+                self.control_suppoter(frame_status)
+                frame_swap_boolean == False
 
             self.root.update()
 
@@ -113,10 +100,18 @@ class GraphicManager:
     def inventory_call():
         pass
 
+    # 프레임 스왑 도우미
+    def frame_swap_supporter(self, param):
+        global frame_status, frame_swap_boolean
+        frame_status = param
+        frame_swap_boolean = True
+
     # 타이틀
-    def title(self, status):
+    def title(self):
         # 캔버스 정리
-        def title_canvas_clear(self):
+        def title_canvas_clear():
+            self.frame_swap_supporter(1)
+
             game.cvs.delete("title_text")
             start_button.pack_forget()
             inventory_button.pack_forget()
@@ -149,9 +144,12 @@ class GraphicManager:
 
 # 파일 매니저
 class FileManager:
+    # 현재 스크립트 파일 절대경로 확보 -> 기준점
+    path = os.path.dirname(os.path.abspath(__file__))
+
     # 버그 레포트
-    def bugreport(text):
-        with open("BugReport_Log.txt", "w+") as file_name:
+    def bugreport(self, text: str):
+        with open("BugReport_Log.txt", "w+", encoding="UTF-8") as file_name:
             # 파일을 처음 생성한 경우
             if file_name.read() == "":
                 os_log = f"OS : {platform.system()}\nVersion : {platform.version()}\nArchitecture : {platform.architecture()}"
@@ -165,86 +163,90 @@ class FileManager:
             # 무조건 작성됨
             file_name.write(f"Log : \n{text}")
 
-    def game_status_parse(params) -> str:
+    # 게임 스테이터스애서 데이터를 가져옴
+    def game_status_parse(self, params) -> str:
         try:
             with open(
-                "game_resource/GameStatus.txt", "r", encoding="UTF-8"
+                self.path + "./game_resource/GameStatus.txt", "r", encoding="UTF-8"
             ) as gamestatus:
                 lines = gamestatus.readlines()
 
                 match params:
                     # 버전 가져와서 리턴
                     case "version":
-                        version_text = lines[3].strip().split(":")
-                        return version_text[1]
+                        version_text = lines[2].strip().split(":")
+                        return version_text[1].replace('"', "")
                     case "season":
-                        season_text, season_number = lines[4].strip().split(":")
-                        return f"{season_text} {season_number}"
+                        season_text, season_number = lines[3].strip().split(":")
+                        return f"{season_text} {season_number}".replace('"', "")
                     case "subtitle":
-                        subtitle_text = lines[5].strip().split(":")
-                        return subtitle_text[1]
+                        subtitle_text = lines[4].strip().split(":")
+                        return subtitle_text[1].replace('"', "")
                     case _:
                         raise Exception
 
         except FileNotFoundError as FNFE:
             file.bugreport(f"GameStatus 파일이 원래 경로에 존재하지 않습니다.")
-            game.issue_exit_suppoter()
+            issue_exit_suppoter()
 
         except Exception as EX:
             file.bugreport(f"gamestatus file issue")
-            game.issue_exit_suppoter()
+            issue_exit_suppoter()
 
-    def game_setting_parse(params) -> str or int:
+    # 게임 설정값 가져옴
+    def game_setting_parse(self, params) -> str or int:
         try:
             with open(
-                "game_resource/Settings.txt", "r", encoding="UTF-8"
+                self.path + "./game_resource/Settings.txt", "r", encoding="UTF-8"
             ) as gamesetting:
                 lines = gamesetting.readlines()
 
                 match params:
                     # 세팅값 가져와서 리턴
                     case "resolution":
-                        resolution = lines[4].strip().split(":")
-                        return resolution[1]
+                        resolution = lines[3].strip().split(":")
+                        return resolution[1].replace('"', "")
                     case "resolution_x":
-                        resolution = lines[4].strip().split(":")
+                        resolution = lines[3].strip().split(":")
                         xscale = resolution[1].strip().split("x")
-                        return xscale[0]
+                        return xscale[0].replace('"', "")
                     case "resolution_y":
-                        resolution = lines[4].strip().split(":")
+                        resolution = lines[3].strip().split(":")
                         yscale = resolution[1].strip().split("x")
-                        return yscale[1]
+                        return yscale[1].replace('"', "")
                     case _:
                         raise Exception
 
         except FileNotFoundError as FNFE:
             file.bugreport(f"Settings 파일이 원래 경로에 존재하지 않습니다.")
+            issue_exit_suppoter()
 
         except Exception as EX:
             file.bugreport(f"gamesetting file issue")
+            issue_exit_suppoter()
 
     # 원래 만들었던 레거시의 코드구조에서 터치하지 않은 상태
     # 익명함수화 요구
-    def awake_suppoter():
-        try:
-            # 파일의 존재 여부 검사
-            player_character = tk.PhotoImage(
-                file="./game_resource/main_character_sprite.png"
-            )
-            boss = tk.PhotoImage(file="./game_resource/enemy_character_sprite.png")
-            bg = tk.PhotoImage(file="./game_resource/backgroundimage.png")
-            floor = tk.PhotoImage(file="./game_resource/floorimage.png")
+    # def awake_suppoter():
+    #     try:
+    #         # 파일의 존재 여부 검사
+    #         player_character = tk.PhotoImage(
+    #             file="./game_resource/main_character_sprite.png"
+    #         )
+    #         boss = tk.PhotoImage(file="./game_resource/enemy_character_sprite.png")
+    #         bg = tk.PhotoImage(file="./game_resource/backgroundimage.png")
+    #         floor = tk.PhotoImage(file="./game_resource/floorimage.png")
 
-        except FileNotFoundError as FNFE:
-            file.bugreport(f"존재하지 않는 파일이 있습니다.")
+    #     except FileNotFoundError as FNFE:
+    #         file.bugreport(f"존재하지 않는 파일이 있습니다.")
 
-        except:
-            pass
+    #     except:
+    #         pass
 
-        else:
-            # 정상적으로 준비된 파일들 객체화
+    #     else:
+    #         # 정상적으로 준비된 파일들 객체화
 
-            return player_character, boss, bg, floor
+    #         return player_character, boss, bg, floor
 
 
 class SettingManager:
@@ -255,11 +257,30 @@ class SoundManager:
     pass
 
 
+# 일반적인 겜 종료
+def normal_exit_suppoter(response):
+    if response == 1:
+        root.destroy()
+        root.quit()
+        exit()
+    elif response == 0:
+        return
+
+
+# 이슈로 인한 겜 종료
+def issue_exit_suppoter():
+    root.destroy()
+    root.quit()
+    exit()
+
+
 # 시작
+root = tk.Tk()
+
 file = FileManager()
 setting = SettingManager()
 sound = SoundManager()
 graphic = GraphicManager()
-game = GameManager()
+game = GameManager(root)
 
 game.game_main_routine()
