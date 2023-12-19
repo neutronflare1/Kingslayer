@@ -14,6 +14,7 @@ import threading
 import player_class as pc
 import inventory as inven
 
+
 # 게임 매니저
 class GameManager:
     # 키 인풋을 받을 변수
@@ -21,7 +22,7 @@ class GameManager:
 
     # tkinter 실행
     def __init__(self):
-        # 해상도에 따른 화면 정중앙 좌표값(모든 UI의 비율을 잡는데 사용)
+        # 해상도에 따른 화면 좌표값(모든 UI의 비율을 잡는데 사용)
         self.resolution_center = file.game_setting_parse("resolution")
         self.resolution_xscale = file.game_setting_parse("resolution_x")
         self.resolution_yscale = file.game_setting_parse("resolution_y")
@@ -74,10 +75,19 @@ class GameManager:
         self.root.quit()
         exit()
 
-    # # 스킬 시전시 스레드화 미구현
-    # def threading_suppoter(self, skill_func):
-    #     skill_interrupt = threading.Thread()
-    #     skill_interrupt.start()
+    def control_suppoter(self, status):
+        match status:
+            case 0:
+                graphic.title()
+
+            case 1:
+                graphic.loading()
+
+            case 2:
+                graphic.ingame()
+
+            case _:
+                raise Exception("status parameter 값에 문제가 있습니다.")
 
     # 게임 메인
     def game_main_routine(self):
@@ -87,55 +97,70 @@ class GameManager:
         self.bind_suppoter()
         file.awake_suppoter()
 
-        # 타이틀
+        # 인게임 무한루프
         while True:
-            match status:
-                case 0:
-                    graphic.title()
+            # title
+            while status == 0:
+                break
 
-                case _:
-                    continue
+            # loading
+            while status == 1:
+                break
 
-        # 로딩
-        while True:
-            break
-
-        # 메인 게임 루틴 영역
-        while True:
-            if player_HP == 0:
-                if len(self.keys) > 0:
-                    if self.keys == 65 or self.keys == 97:
-                        self.threading_suppoter()
-
-            self.root.update()
+            # in-game
+            while status == 2:
+                self.root.update()
 
 
 class GraphicManager:
     # 캔버스 정리
-    def canvas_clear(self, target: list):
-        for items in target:
+    def canvas_clear(self, cvs_target: list, pack_target: list):
+        for items in cvs_target:
             game.cvs.delete(items)
+
+        def grid_clear():
+            target = game.root.grid_slaves()
+            for items in target:
+                items.destroy()
+
+        def unpack():
+            for item in pack_target:
+                item.destroy()
+
+        grid_clear()
+        unpack()
         gc.collect()
 
     # 타이틀
     def title(self):
         def next():
-            self.canvas_clear(["title_text"])
+            self.canvas_clear(["title_text"], [start_button, inventory_button])
 
         game.cvs.create_text(
+            game.root,
             (game.resolution_xscale % 2),
-            (game.resolution_yscale % 2) - (game.resolution_yscale % 6),
+            ((game.resolution_yscale % 2) - (game.resolution_yscale % 6)),
             text="KingSlayer",
             fill="DeepSkyBlue2",
             font=("Times New Roman", 36),
             tags="title_text",
         )
-        game.cvs.create_rectangle(
-            (game.resolution_xscale % 2) - (game.resolution_xscale % 10),
-            (game.resolution_yscale % 2) ,
-            (game.resolution_xscale % 2) + (game.resolution_xscale % 10),
-            (game.resolution_yscale % 2) + (game.resolution_yscale % 12),
+        start_button = tk.Button(game.root, text="시작", command=next).grid(row=0)
+        start_button.place(
+            x=(game.resolution_xscale % 2),
+            y=((game.resolution_yscale % 2) + (game.resolution_yscale % 12)),
         )
+        inventory_button = tk.Button(game.root, text="시작", command=next).grid(
+            row=1, column=1
+        )
+        inventory_button.pack()
+
+    # 로딩창
+    def loading(self):
+        pass
+
+    def ingame():
+        pass
 
 
 # 파일 매니저
@@ -215,6 +240,7 @@ class FileManager:
             file.bugreport(f"gamesetting file issue")
 
     # 원래 만들었던 레거시의 코드구조에서 터치하지 않은 상태
+    # 익명함수화 요구
     def awake_suppoter():
         try:
             # 파일의 존재 여부 검사
