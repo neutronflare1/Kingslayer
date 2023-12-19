@@ -84,7 +84,20 @@ class GameManager:
 
         # 시작 전 추가 작업
         self.bind_suppoter()
-        file.awake_suppoter()
+        try:
+            # image 매핑
+            player_character = tk.PhotoImage(
+                file=file.path + "\game_resource\makeshift_player_sprite.png"
+            )
+            boss = tk.PhotoImage(
+                file=file.path + "\game_resource\enemy_character_sprite.png"
+            )
+            bg = tk.PhotoImage(
+                file=file.path + "\game_resource\isback_ground_image.png"
+            )
+
+        except FileNotFoundError as FNFE:
+            file.bugreport(f"존재하지 않는 파일이 있습니다.")
 
         # 인게임 무한루프
         while True:
@@ -167,7 +180,7 @@ class FileManager:
     def game_status_parse(self, params) -> str:
         try:
             with open(
-                self.path + "./game_resource/GameStatus.txt", "r", encoding="UTF-8"
+                self.path + "\game_resource\GameStatus.txt", "r", encoding="UTF-8"
             ) as gamestatus:
                 lines = gamestatus.readlines()
 
@@ -197,7 +210,7 @@ class FileManager:
     def game_setting_parse(self, params) -> str or int:
         try:
             with open(
-                self.path + "./game_resource/Settings.txt", "r", encoding="UTF-8"
+                self.path + "\game_resource\Settings.txt", "r", encoding="UTF-8"
             ) as gamesetting:
                 lines = gamesetting.readlines()
 
@@ -224,29 +237,6 @@ class FileManager:
         except Exception as EX:
             file.bugreport(f"gamesetting file issue")
             issue_exit_suppoter()
-
-    # 원래 만들었던 레거시의 코드구조에서 터치하지 않은 상태
-    # 익명함수화 요구
-    # def awake_suppoter():
-    #     try:
-    #         # 파일의 존재 여부 검사
-    #         player_character = tk.PhotoImage(
-    #             file="./game_resource/main_character_sprite.png"
-    #         )
-    #         boss = tk.PhotoImage(file="./game_resource/enemy_character_sprite.png")
-    #         bg = tk.PhotoImage(file="./game_resource/backgroundimage.png")
-    #         floor = tk.PhotoImage(file="./game_resource/floorimage.png")
-
-    #     except FileNotFoundError as FNFE:
-    #         file.bugreport(f"존재하지 않는 파일이 있습니다.")
-
-    #     except:
-    #         pass
-
-    #     else:
-    #         # 정상적으로 준비된 파일들 객체화
-
-    #         return player_character, boss, bg, floor
 
 
 class SettingManager:
