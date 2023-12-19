@@ -13,6 +13,7 @@ import threading
 # 커스텀 패키지
 import player_class as pc
 import inventory as inven
+import boss_class as bc
 
 
 # 게임 매니저
@@ -75,16 +76,17 @@ class GameManager:
         self.root.quit()
         exit()
 
+    # 화면 옮겨다니기
     def control_suppoter(self, status):
         match status:
             case 0:
-                graphic.title()
+                graphic.title(status)
 
             case 1:
-                graphic.loading()
+                graphic.loading(status)
 
             case 2:
-                graphic.ingame()
+                graphic.ingame(status)
 
             case _:
                 raise Exception("status parameter 값에 문제가 있습니다.")
@@ -92,6 +94,7 @@ class GameManager:
     # 게임 메인
     def game_main_routine(self):
         status = 0
+        frame_swap_boolean = False
 
         # 시작 전 추가 작업
         self.bind_suppoter()
@@ -99,42 +102,25 @@ class GameManager:
 
         # 인게임 무한루프
         while True:
-            # title
-            while status == 0:
-                break
+            if frame_swap_boolean == True:
+                self.control_suppoter(status)
 
-            # loading
-            while status == 1:
-                break
-
-            # in-game
-            while status == 2:
-                self.root.update()
+            self.root.update()
 
 
 class GraphicManager:
-    # 캔버스 정리
-    def canvas_clear(self, cvs_target: list, pack_target: list):
-        for items in cvs_target:
-            game.cvs.delete(items)
-
-        def grid_clear():
-            target = game.root.grid_slaves()
-            for items in target:
-                items.destroy()
-
-        def unpack():
-            for item in pack_target:
-                item.destroy()
-
-        grid_clear()
-        unpack()
-        gc.collect()
+    # 인벤토리 호출
+    def inventory_call():
+        pass
 
     # 타이틀
-    def title(self):
-        def next():
-            self.canvas_clear(["title_text"], [start_button, inventory_button])
+    def title(self, status):
+        # 캔버스 정리
+        def title_canvas_clear(self):
+            game.cvs.delete("title_text")
+            start_button.pack_forget()
+            inventory_button.pack_forget()
+            gc.collect()
 
         game.cvs.create_text(
             game.root,
@@ -145,14 +131,12 @@ class GraphicManager:
             font=("Times New Roman", 36),
             tags="title_text",
         )
-        start_button = tk.Button(game.root, text="시작", command=next).grid(row=0)
+        start_button = tk.Button(game.root, text="시작", command=title_canvas_clear)
         start_button.place(
             x=(game.resolution_xscale % 2),
             y=((game.resolution_yscale % 2) + (game.resolution_yscale % 12)),
         )
-        inventory_button = tk.Button(game.root, text="시작", command=next).grid(
-            row=1, column=1
-        )
+        inventory_button = tk.Button(game.root, text="시작", command=next)
         inventory_button.pack()
 
     # 로딩창
