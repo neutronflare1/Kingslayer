@@ -9,6 +9,7 @@ from os.path import isfile, isdir  # 파일 유효성 검사 모듈
 import platform, psutil, torch  # 기기 정보를 받아오는 모듈들
 import random as r
 import threading
+import time
 
 # 커스텀 패키지
 import player_class as pc
@@ -79,12 +80,12 @@ class GameManager:
 
     # 눌렀을때
     def key_press_handler(self, e):
-        self.keys.add(e.keycode)
+        keys.add(e.keycode)
 
     # 뗄때
     def key_release_handler(self, e):
-        if e.keycode in self.keys:
-            self.keys.remove(e.keycode)
+        if e.keycode in keys:
+            keys.remove(e.keycode)
 
     # 겜 종료
     def exit_suppoter(self):
@@ -111,25 +112,66 @@ class GameManager:
 
         self.frame_swap_boolean = False
 
+    def pause_suppoter(self):
+        pause_status = True
+
+        def exit_pause(self):
+            pause_status = False
+
+        game.cvs.create_rectangle(
+            game.resolution_xscale // 2 - game.resolution_xscale // 12,
+            game.resolution_yscale // 2 - game.resolution_xscale // 8,
+            game.resolution_xscale // 2 + game.resolution_xscale // 12,
+            game.resolution_yscale // 2 + game.resolution_xscale // 8,
+        )
+
+        pause_text = tk.Label(
+            root, text="게임이 일시 정지 상태입니다", font=("Times New Roman", 12), bg="snow"
+        )
+        pause_text.place(
+            x=game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2 - game.resolution_xscale // 7,
+        )
+
+        start_button = tk.Button(root, text="이어서 시작", command=exit_pause)
+        start_button.place(
+            x=game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2 - game.resolution_xscale // 5,
+        )
+
+        restart_button = tk.Button(root, text="다시 시작", command=exit_pause)
+        start_button.place(
+            x=game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2 - game.resolution_xscale // 3,
+        )
+
+        title_button = tk.Button(root, text="타이틀로 되돌아가기", command=exit_pause)
+        start_button.place(
+            x=game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2 - game.resolution_xscale // 1,
+        )
+
+        while pause_status:
+            time.sleep(1)
+
     # 게임 메인
     def game_main_routine(self):
         self.control_suppoter()
-        root.after(100, self.game_main_routine)
+        if keys == 27:
+            self.pause_suppoter()
+        root.after(1, self.game_main_routine)
 
 
 class GraphicManager:
     # 인벤토리 호출
     def inventory_call(self):
-        pass
-
-    # 캔버스 정리
-    def title_canvas_clear(self):
-        title_text.pack_forget()
-        start_button.pack_forget()
-        inventory_button.pack_forget()
-        game.frame_swap_boolean = True
-        game.frame_status = 1
-        gc.collect()
+        error_text = tk.Label(
+            root,
+            text="아직 미구현입니다",
+            font=("Times New Roman", 10),
+            bg="snow",
+        )
+        error_text.place(x=75, y=75, anchor="center")
 
     # 타이틀
     def title(self):
@@ -153,14 +195,55 @@ class GraphicManager:
             y=title_y + game.resolution_yscale // 6,
         )
         inventory_button = tk.Button(root, text="아이템", command=self.inventory_call)
-        inventory_button.pack()
+        inventory_button.place(x=50, y=50, anchor="center")
+
+    # 타이틀 정리
+    def title_canvas_clear(self):
+        title_text.destroy()
+        start_button.destroy()
+        inventory_button.destroy()
+        game.frame_swap_boolean = True
+        game.frame_status = 1
+        gc.collect()
 
     # 로딩창
     def loading(self):
-        pass
+        # loading_text = tk.Label(
+        #     root,
+        #     text="인생 쉽네요",
+        #     font=("Times New Roman", 10),
+        #     bg="snow",
+        # )
+        # loading_text.place(
+        #     x=game.resolution_xscale, y=game.resolution_yscale, anchor="center"
+        # )
 
+        # 미구현
+        game.frame_swap_boolean = True
+        game.frame_status = 1
+
+    # 인게임 정리
+    def ingame_canvas_clear(self):
+        game.cvs.delete(player)
+        start_button.destroy()
+        inventory_button.destroy()
+        game.frame_swap_boolean = True
+        game.frame_status = 1
+        gc.collect()
+
+    # 인게임
     def ingame(self):
-        pass
+        global player_character_ingame, boss_character_ingame
+        player_character_ingame = game.cvs.create_image(
+            x=game.resolution_xscale // 2 - game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2,
+            image=game.player_character,
+        )
+        boss_character_ingame = game.cvs.create_image(
+            x=game.resolution_xscale // 2 - game.resolution_xscale // 2,
+            y=game.resolution_yscale // 2,
+            image=game.boss,
+        )
 
 
 # 파일 매니저
